@@ -6,8 +6,6 @@ const students_sch=require("../model/Courses_Schema");
 
 
 const Courses=mongoose.model("courses-list");
-
-
 //to register courses
 //course code, course name and faculty name required
 course_router.post("/courses/register",(req, res)=>{
@@ -30,13 +28,64 @@ course_router.post("/courses/register",(req, res)=>{
         res.send("Please enter all required field")
     }
 })
-//to  delete courses from database
+//to  delete/deregister courses from database
 course_router.delete("/courses/delete",(req,res)=>{
     const query=req.body;
      Courses.deleteMany(query,(err)=>{
      res.send("deleted many");})
  })
-//  course_router.put()
+//to change course_code and course name
+ //todo
+ course_router.put("/courses/change/:value",(req,res)=>{
+    if(req.params.value==="course-code"){
+        if(req.body.course_code!=null && req.body.new_course_code!=null&&req.body.course_code!=req.body.new_course_code){
+            Courses.findOne({Course_code:req.body.course_code},async(err,existingCourse)=>{
+                if(existingCourse===null){
+                     res.send("course is not found")
+                }
+                else{
+                    Courses.findOne({Course_code:req.body.new_course_code},async(err,new_existingCourse)=>{
+                    if(new_existingCourse===null){
+                        existingCourse.Course_code=req.body.new_course_code;
+                        await existingCourse.save();
+                        res.send(existingCourse.Course_code);
+                    }
+                    else{
+                        res.send("The new course code is exist")  
+                    }
+                })
+                }           
+            })
+        }else{
+            res.send("plz enter all field")
+        }
+    }
+    else if(req.params.value==="course-name"){
+        if(req.body.course_code!=null &&req.body.course_name!=null){
+            Courses.findOne({Course_code:req.body.course_code},async(err,existingCourse)=>{
+                if(existingCourse===null){
+                     res.send("course is not found")
+                }
+                else{
+                    Courses.findOne({Course_name:req.body.course_name},async(err,new_existingCourse)=>{
+                    if(new_existingCourse===null){
+                        existingCourse.Course_name=req.body.course_name;
+                        await existingCourse.save();
+                        res.send(existingCourse.Course_name);
+                    }
+                    else{
+                        res.send("The new course name is exist")  
+                    }
+                })
+                }           
+            })
+        }else{
+            res.send("plz enter all field")
+        }
+    }
+ })
+ //to get all courses
+ //todo
 //to take attendance
 // attendance json example [{"student_id":123556,"attend":true},{"student_id":1234560222}]
 course_router.put("/courses/attendance/:course_code",(req,res)=>{
