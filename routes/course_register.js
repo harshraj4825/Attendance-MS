@@ -85,7 +85,6 @@ course_router.put("/courses/change/:value",(req,res)=>{
 })
  //to search course detail
 course_router.get("/courses/findone",async(req,res)=>{   
-    console.log(req.body.course_name,req.body.course_code) 
     if((req.body.course_name!=null)||(req.body.course_code!=null)){
         const course_attribute=req.body
         switch (Object.keys(course_attribute)[0]){
@@ -114,8 +113,17 @@ course_router.get("/courses/findone",async(req,res)=>{
         res.send("plz enter required field")
     }
 })
- //to get all courses
- //todo
+ //to get all courses course dstails
+course_router.get("/courses/get-all-course",async(req,res)=>{
+    Courses.find({},(err,existingCourse)=>{
+        if(existingCourse!=null){
+            res.send(existingCourse)
+        }else{
+            res.send("no course is register")
+        }
+        
+    })
+})
 //to take attendance
 // attendance json example [{"student_id":123556,"attend":true},{"student_id":1234560222}]
 course_router.put("/courses/attendance/:course_code",(req,res)=>{
