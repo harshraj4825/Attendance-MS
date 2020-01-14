@@ -35,8 +35,7 @@ course_router.delete("/courses/delete",(req,res)=>{
      res.send("deleted many");})
  })
 //to change course_code and course name
- //todo
- course_router.put("/courses/change/:value",(req,res)=>{
+course_router.put("/courses/change/:value",(req,res)=>{
     if(req.params.value==="course-code"){
         if(req.body.course_code!=null && req.body.new_course_code!=null&&req.body.course_code!=req.body.new_course_code){
             Courses.findOne({Course_code:req.body.course_code},async(err,existingCourse)=>{
@@ -83,7 +82,38 @@ course_router.delete("/courses/delete",(req,res)=>{
             res.send("plz enter all field")
         }
     }
- })
+})
+ //to search course detail
+course_router.get("/courses/findone",async(req,res)=>{   
+    console.log(req.body.course_name,req.body.course_code) 
+    if((req.body.course_name!=null)||(req.body.course_code!=null)){
+        const course_attribute=req.body
+        switch (Object.keys(course_attribute)[0]){
+            //search course by course_code
+            case "course_code":{await Courses.findOne({Course_code:req.body.course_code},(err,existingCourse)=>{
+                if(existingCourse!=null){
+                       res.send(existingCourse)
+                }else{
+                       res.send("course code doesn't exist")
+                   } 
+                })
+                break;}
+            case "course_name":{await Courses.findOne(({Course_name:req.body.course_name},(err,existingCourse)=>{
+                if(existingCourse!=null){
+                          res.send(existingCourse)
+                }else{
+                       res.send("course doesn't exist")
+                }
+                }))
+                break;}
+            default:{
+                res.send("Plz enter valid detail")
+            }
+       }
+    }else{
+        res.send("plz enter required field")
+    }
+})
  //to get all courses
  //todo
 //to take attendance
