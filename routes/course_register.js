@@ -151,6 +151,7 @@ course_router.put("/courses/attendance/:course_code",(req,res)=>{
         res.send("Please enter all required field")
     }
 })
+//to get attendance of student for a course
 
 // to check the student resister for the course
 //ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some

@@ -77,6 +77,35 @@ router.put("/student/:userId",(req,res)=>{
     }  
 })
 
+//to get all registered student/faculty in database
+router.get("/:student/get-all-list",(req,res)=>{
+    switch (req.params.student){
+        case "student":{
+            Student_schema.find({},(err,existingUser)=>{
+                if(existingUser===null){
+                    res.send("no record found")
+                }else{
+                    res.send(existingUser);
+                }
+            })
+            break;
+        }
+        case "faculty":{
+            Faculty_schema.find({},(err,existingUser)=>{
+                if(existingUser===null){
+                    res.send("no record found")
+                }
+                else{
+                    res.send(existingUser);
+                }
+            })
+            break;
+        }
+        default:{
+            res.send("This is not valid url")
+        }
+    }
+})
 //Faculty login
 router.post("/faculty/login",(req,res)=>{
     if(req.body.Email && req.body.Password){
