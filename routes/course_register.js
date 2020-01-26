@@ -237,5 +237,10 @@ course_router.get("/courses/registered-students",async(req,res)=>{
         res.send("please enter course code")
     }
 })
+//to get query
+//http://localhost:3001/resp?id=12345
+course_router.get("/resp",(req,res)=>{
+    res.send({UserId:12321,Name:"harsh"});
+})
 
 module.exports=course_router;
