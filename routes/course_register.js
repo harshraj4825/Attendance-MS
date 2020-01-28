@@ -9,23 +9,42 @@ const Courses=mongoose.model("courses-list");
 //to register courses
 //course code, course name and faculty name required
 course_router.post("/courses/register",(req, res)=>{
-    if(req.body.Course_code && req.body.Course_name && req.body.Faculty_name){
+    if(req.body.Course_code && req.body.Course_name && req.body.Faculty_Email){
         const course_schema=new Courses();
         course_schema.Course_code=req.body.Course_code;
         course_schema.Course_name=req.body.Course_name;
-        course_schema.Faculty_name=req.body.Faculty_name;
+        course_schema.Faculty_Email=req.body.Faculty_Email;
         //find course
         Courses.findOne({Course_code:course_schema.Course_code},async(err,existingCourse)=>{
         //if course is not register
         if(existingCourse===null){
             await course_schema.save();
-            res.status(200).send(course_schema);
+            res.status(200).send({course_register:"successfully"});
         }else{
-            res.status(400).send("Course is already exist");
+            res.status(201).send({course_register:"Course is already exist"});
         }
         })
     }else{
         res.send("Please enter all required field")
+    }
+})
+//to get all course for by specific faculty
+course_router.get("/courses/get-all",async(req,res)=>{
+    if(req.body.UserId){
+        await Courses.find({Faculty_Email:req.body.UserId},(err,getallcourses)=>{
+            if(getallcourses!=null){
+                const objtosend=[]
+                for(i in getallcourses){
+                    console.log(getallcourses[i].Course_name)
+                    objtosend[i]={"Course_code":getallcourses[i].Course_code,"Registerd Students":getallcourses[i].student_registered.length}
+                }
+                res.status(200).send(objtosend)
+            }else{
+                res.status(201).send({getall:"No course exist"})
+            }
+        })
+    }else{
+        res.send("Plz enter all required field");
     }
 })
 //to  delete/deregister courses from database

@@ -21,7 +21,7 @@ const course_schema=mongoose.Schema({
         type:String,
         required:true
     },
-    Faculty_name:{
+    Faculty_Email:{
         type:String,
         required:true
     },
