@@ -6,6 +6,7 @@ const students_sch=require("../model/Courses_Schema");
 
 
 const Courses=mongoose.model("courses-list");
+const Student_schema=mongoose.model("Student-list");
 //to register courses
 //course code, course name and faculty name required
 course_router.post("/courses/register",(req, res)=>{
@@ -29,14 +30,13 @@ course_router.post("/courses/register",(req, res)=>{
     }
 })
 //to get all course for by specific faculty
-course_router.get("/courses/get-all",async(req,res)=>{
+course_router.post("/courses/get-all",async(req,res)=>{
     if(req.body.UserId){
         await Courses.find({Faculty_Email:req.body.UserId},(err,getallcourses)=>{
             if(getallcourses!=null){
                 const objtosend=[]
                 for(i in getallcourses){
-                    console.log(getallcourses[i].Course_name)
-                    objtosend[i]={"Course_code":getallcourses[i].Course_code,"Registerd Students":getallcourses[i].student_registered.length}
+                    objtosend[i]={"Course_code":getallcourses[i].Course_code,"Registered_Students":getallcourses[i].student_registered.length}
                 }
                 res.status(200).send(objtosend)
             }else{
@@ -72,7 +72,7 @@ course_router.put("/courses/change/:value",(req,res)=>{
                         res.send("The new course code is exist")  
                     }
                 })
-                }           
+                }    
             })
         }else{
             res.send("plz enter all field")
@@ -102,15 +102,34 @@ course_router.put("/courses/change/:value",(req,res)=>{
         }
     }
 })
- //to search course detail
-course_router.get("/courses/findone",async(req,res)=>{   
+ //to search course detail by course code or course name
+course_router.post("/courses/findone",async(req,res)=>{   
     if((req.body.course_name!=null)||(req.body.course_code!=null)){
         const course_attribute=req.body
         switch (Object.keys(course_attribute)[0]){
             //search course by course_code
-            case "course_code":{await Courses.findOne({Course_code:req.body.course_code},(err,existingCourse)=>{
+            case "course_code":{await Courses.findOne({Course_code:req.body.course_code},async(err,existingCourse)=>{
                 if(existingCourse!=null){
-                       res.send(existingCourse)
+                const student_lists=[];
+                const no_of_classes=existingCourse.attendance.length
+                    for (let i=0; i<existingCourse.student_registered.length; i++) {
+                        let count=0;
+                        await Student_schema.findOne({UserId:existingCourse.student_registered[i]},(err,existingName)=>{   
+                            for(let k=0;k<no_of_classes;k++){
+                                for(let j=0;j<existingCourse.attendance[k].attendance_list.length;j++){
+                                    if(existingCourse.attendance[k].attendance_list[j].student_id===existingCourse.student_registered[i] && existingCourse.attendance[k].attendance_list[j].attend===true){
+                                        count=count+1;
+                                    }
+                                }
+                            }
+                            let persentage_of_attendance=(count*100/no_of_classes);
+                            student_lists.push({"student_roll_number":existingCourse.student_registered[i],"student_name":existingName.Name,"persentage_of_attendance":parseFloat(persentage_of_attendance).toFixed(2)});    
+                        })
+                    }
+                    const objtosend={"student_information":student_lists}
+                    objtosend["course_name"]=existingCourse.Course_name;
+                    objtosend["faculty_name"]=existingCourse.Faculty_Email;
+                    res.status(200).send(objtosend);
                 }else{
                        res.send("course code doesn't exist")
                    } 
@@ -145,6 +164,7 @@ course_router.get("/courses/get-all-course",async(req,res)=>{
 })
 //to take attendance
 // attendance json example [{"student_id":123556,"attend":true},{"student_id":1234560222}]
+//https://stackoverflow.com/questions/56981910/how-to-send-json-array-in-android-retrofit/56982069
 course_router.put("/courses/attendance/:course_code",(req,res)=>{
     if(req.params.course_code){
         const dt = datetime.create();
@@ -156,6 +176,7 @@ course_router.put("/courses/attendance/:course_code",(req,res)=>{
             existingCourse.attendance.push({date:formatted_date,time:formatted_time});
             for(key in req.body){
                 //upload attendance lists of student
+                console.log(req.body[key])
                 existingCourse.attendance[arrayLength].attendance_list.push(req.body[key]);
             }
             await existingCourse.save();
@@ -186,9 +207,9 @@ function checkAvailability(arr, val) {
 }
 
 //to resister/update the student in course
-course_router.put("/courses/:register/student/:course_code",(req,res)=>{   
-    if(req.params.course_code){
-        Courses.findOne({Course_code:req.params.course_code},async(err,existingCourse)=>{
+course_router.put("/courses/:register/student/",(req,res)=>{   
+    if(req.body.course_code){
+        Courses.findOne({Course_code:req.body.course_code},async(err,existingCourse)=>{
             if(existingCourse){
                     switch(req.params.register){
                         case "register":{
