@@ -126,7 +126,8 @@ course_router.post("/courses/findone",async(req,res)=>{
                             student_lists.push({"student_roll_number":existingCourse.student_registered[i],"student_name":existingName.Name,"persentage_of_attendance":parseFloat(persentage_of_attendance).toFixed(2)});    
                         })
                     }
-                    const objtosend={"student_information":student_lists}
+                    const objtosend={"student_information":student_lists};
+                    objtosend["total_students"]=existingCourse.student_registered.length;
                     objtosend["course_name"]=existingCourse.Course_name;
                     objtosend["faculty_name"]=existingCourse.Faculty_Email;
                     res.status(200).send(objtosend);
@@ -151,6 +152,45 @@ course_router.post("/courses/findone",async(req,res)=>{
         res.send("plz enter required field")
     }
 })
+//to get attendance of a student for a paricular course
+course_router.post("/courses/student-attendance",async(req,res)=>{
+    if(req.body.student_id!=null && req.body.course_code!=null){
+        await Courses.findOne({Course_code:req.body.course_code},(err,existingCourse)=>{
+            if(existingCourse!=null){
+                const attendanceSummary=[];
+                const no_of_classes=existingCourse.attendance.length;
+                if(existingCourse.student_registered.includes(req.body.student_id)){
+                    let present=0;
+                    let sl_no=1;
+                    for(let i=0;i<no_of_classes;i++){
+                        for(let j=0;j<existingCourse.attendance[i].attendance_list.length;j++){
+                            if(existingCourse.attendance[i].attendance_list[j].student_id===req.body.student_id){
+                                if(existingCourse.attendance[i].attendance_list[j].attend===true){
+                                    present=present+1;
+                                    attendanceSummary.push({"sl_no":sl_no,"Date":existingCourse.attendance[i].date,"Status":"Present"})
+                                }else{
+                                    attendanceSummary.push({"sl_no":sl_no,"Date":existingCourse.attendance[i].date,"Status":"Absent"})
+                                }
+                            }
+                        }
+                        sl_no=sl_no+1;
+                    }
+                    const objtosend={"Attendance_Status":attendanceSummary};
+                    objtosend["Total_lacture"]=no_of_classes;
+                    objtosend["Total_Present"]=present;
+                    //res.status(200).send(no_of_classes.toString())
+                    //console.log(present);
+                    res.status(200).send(objtosend)
+                }else{
+                    res.send("student is not register");
+                }
+            }
+        })
+
+    }else{
+        res.send("plz enter all  field")
+    }
+})
  //to get all courses course dstails
 course_router.get("/courses/get-all-course",async(req,res)=>{
     Courses.find({},(err,existingCourse)=>{
@@ -165,25 +205,34 @@ course_router.get("/courses/get-all-course",async(req,res)=>{
 //to take attendance
 // attendance json example [{"student_id":123556,"attend":true},{"student_id":1234560222}]
 //https://stackoverflow.com/questions/56981910/how-to-send-json-array-in-android-retrofit/56982069
-course_router.put("/courses/attendance/:course_code",(req,res)=>{
+course_router.put("/courses/attendance/:course_code",async(req,res)=>{
     if(req.params.course_code){
         const dt = datetime.create();
         const formatted_date = dt.format('Y/m/d');
         const formatted_time=dt.format("H:M:S");
-        Courses.findOne({Course_code:req.params.course_code},async(err,existingCourse)=>{
+         await Courses.findOne({Course_code:req.params.course_code},async(err,existingCourse)=>{
           const  arrayLength=(existingCourse.attendance.length);
-           if(existingCourse){
-            existingCourse.attendance.push({date:formatted_date,time:formatted_time});
-            for(key in req.body){
-                //upload attendance lists of student
-                console.log(req.body[key])
-                existingCourse.attendance[arrayLength].attendance_list.push(req.body[key]);
-            }
-            await existingCourse.save();
-             
-               res.send(existingCourse.attendance); 
-           }else{
-               res.send("bad request")
+            if(existingCourse){
+                existingCourse.attendance.push({date:formatted_date,time:formatted_time});
+                if(existingCourse.student_registered.length===req.body.length){
+                    for(let i=0;i<req.body.length;i++){
+                        if(existingCourse.student_registered.includes(req.body[i].student_id)){
+                        existingCourse.attendance[arrayLength].attendance_list.push(req.body[i])
+                        }
+                        else{
+                        res.send(req.body[i].student_id.toString())
+                        res.end()
+                        }
+                    }
+                    await existingCourse.save();
+                    res.send(existingCourse.attendance); 
+                }
+                else{
+                    res.send("plz provide all students status")
+                }
+                
+            }else{
+                res.send("bad request")
            }
         })
 
