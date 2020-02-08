@@ -182,13 +182,44 @@ course_router.post("/courses/student-attendance",async(req,res)=>{
                     //console.log(present);
                     res.status(200).send(objtosend)
                 }else{
-                    res.send("student is not register");
+                    res.status(201).send("student is not register");
                 }
             }
         })
 
     }else{
-        res.send("plz enter all  field")
+        res.status(201).send("plz enter all  field")
+    }
+})
+//to get attendance detail by course
+course_router.post("/courses/get-course-attendance",async(req,res)=>{
+    if(req.body.course_code!=null){
+        await Courses.findOne({Course_code:req.body.course_code},(err,existingCourse)=>{
+            if(existingCourse!=null){
+                let sl_no=0;
+                let count=0;
+                let attendanceDate=[];
+                for(let i=0;i<existingCourse.attendance.length;i++){
+                    for(let j=0;j<existingCourse.attendance[i].attendance_list.length;j++){
+                        if(existingCourse.attendance[i].attendance_list[j].attend===true){
+                            count=count+1;
+                        }
+                    }
+                    sl_no=sl_no+1;
+                    attendanceDate.push({"sl_no":sl_no,"Date":existingCourse.attendance[i].date,"Total_stu_present":count})
+                }
+                const objtosend={"attenndanceInfo":attendanceDate}
+                objtosend["course_name"]=existingCourse.Course_name;
+                objtosend["total_lecture"]=existingCourse.attendance.length;
+                res.status(200).send(objtosend)
+            }
+            else{
+                res.status(201).send("bad request");
+            }
+        })
+
+    }else{
+        res.status(201).send("bad request");
     }
 })
  //to get all courses course dstails
