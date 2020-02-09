@@ -222,6 +222,33 @@ course_router.post("/courses/get-course-attendance",async(req,res)=>{
         res.status(201).send("bad request");
     }
 })
+//to get attendance student list for a date
+course_router.post("/courses/get-attendance-students-list",async(req,res)=>{
+    if(req.body.course_code!=null && req.body.date!=null){ 
+        await Courses.findOne({Course_code:req.body.course_code},async(err,existingCourse)=>{
+            if(existingCourse!=null){
+                let student_lists=[];
+                for(let i=0;i<existingCourse.attendance.length;i++){
+                    if(existingCourse.attendance[i].date===req.body.date){
+                        for(let j=0;j<existingCourse.attendance[i].attendance_list.length;j++){
+                            if(existingCourse.attendance[i].attendance_list[j].attend===true){
+                                student_lists.push({"student_id":existingCourse.attendance[i].attendance_list[j].student_id,"attend":"Present"});
+                            }else{
+                                student_lists.push({"student_id":existingCourse.attendance[i].attendance_list[j].student_id,"attend":"Absent"});
+                            }
+                        }
+                        break;
+                    }
+                } 
+                res.status(200).send(student_lists)
+            }else{
+                res.status(201).send("bad request")
+            }         
+        })  
+    }else{
+        res.status(201).send("bad request")
+    } 
+})
  //to get all courses course dstails
 course_router.get("/courses/get-all-course",async(req,res)=>{
     Courses.find({},(err,existingCourse)=>{
